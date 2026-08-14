@@ -1,0 +1,25 @@
+{
+  "name": "vidyra",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vidyra — AI-powered learning platform monorepo",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "install:all": "npm install --prefix client && (test -d server/venv && ./server/venv/bin/pip install -r server/requirements.txt || pip install -r server/requirements.txt)",
+    "dev:client": "npm run dev --prefix client",
+    "dev:server": "cd server && (test -f venv/bin/uvicorn && ./venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 || uvicorn app.main:app --reload --host 0.0.0.0 --port 8000)",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "build:client": "npm run build --prefix client",
+    "lint:client": "npm run lint --prefix client",
+    "build": "npm run build:client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
