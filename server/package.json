@@ -1,0 +1,11 @@
+{
+  "name": "vidyra-server",
+  "version": "1.0.0",
+  "description": "Vidyra AI Tutor Backend Service",
+  "private": true,
+  "scripts": {
+    "dev": "uvicorn app.main:app --reload --port 8000",
+    "start": "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+  }
+}
+
