@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_BASE_URL =
-  process.env.BACKEND_URL ||
-  process.env.NEXT_PUBLIC_BACKEND_URL ||
-  "http://localhost:8000";
+function getBackendUrl(): string {
+  let url = (
+    process.env.BACKEND_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_URL ||
+    "http://localhost:8000"
+  ).trim();
+
+  url = url.replace(/^["']|["']$/g, "").trim();
+
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    url = `https://${url}`;
+  }
+
+  return url.replace(/\/+$/, "");
+}
 
 function appendSetCookieHeaders(source: Headers, target: Headers) {
   const sourceWithGetSetCookie = source as unknown as { getSetCookie?: () => string[] };
@@ -63,7 +74,7 @@ async function handleProxy(
   const path = params.path.join("/");
   const url = new URL(request.url);
   const searchParams = url.searchParams.toString();
-  const targetUrl = `${API_BASE_URL}/${path}${searchParams ? `?${searchParams}` : ""}`;
+  const targetUrl = `${getBackendUrl()}/${path}${searchParams ? `?${searchParams}` : ""}`;
 
   const cookieHeader = request.headers.get("cookie");
   const csrfHeader = request.headers.get("X-CSRF-Token") || request.headers.get("x-csrf-token");

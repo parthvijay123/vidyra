@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL =
-  process.env.BACKEND_URL ||
-  process.env.NEXT_PUBLIC_BACKEND_URL ||
-  "http://localhost:8000";
+function getBackendUrl(): string {
+  let url = (
+    process.env.BACKEND_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_URL ||
+    "http://localhost:8000"
+  ).trim();
+
+  url = url.replace(/^["']|["']$/g, "").trim();
+
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    url = `https://${url}`;
+  }
+
+  return url.replace(/\/+$/, "");
+}
 
 const FRONTEND_CALLBACK_PATH = "/callback";
 const BACKEND_SESSION_COOKIE_NAME = process.env.BFF_BACKEND_SESSION_COOKIE_NAME || "session";
@@ -14,8 +25,9 @@ const CSRF_COOKIE_NAME = process.env.NEXT_PUBLIC_CSRF_COOKIE_NAME || "vidyra_csr
 function getRequestOrigin(request: NextRequest): string {
   const forwardedHost = request.headers.get("x-forwarded-host");
   if (forwardedHost) {
-    const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
-    return `${forwardedProto}://${forwardedHost}`;
+    const rawProto = request.headers.get("x-forwarded-proto") || "https";
+    const forwardedProto = rawProto.split(",")[0].trim();
+    return `${forwardedProto}://${forwardedHost.split(",")[0].trim()}`;
   }
   return request.nextUrl.origin;
 }
@@ -197,7 +209,8 @@ export async function GET(request: NextRequest) {
     return redirectWithError(origin, "No login session found. Please try again.");
   }
 
-  const backendCallbackUrl = new URL(`${BACKEND_URL}/auth/callback`);
+  const backendBase = getBackendUrl();
+  const backendCallbackUrl = new URL(`${backendBase}/auth/callback`);
   backendCallbackUrl.searchParams.set("code", code);
   backendCallbackUrl.searchParams.set("state", state);
   if (scope) backendCallbackUrl.searchParams.set("scope", scope);
