@@ -20,13 +20,18 @@ _ssl_ctx = ssl.create_default_context()
 _ssl_ctx.check_hostname = False
 _ssl_ctx.verify_mode = ssl.CERT_NONE
 
+# statement_cache_size=0 ensures compatibility with both direct connections
+# and Supabase IPv4 connection poolers (PgBouncer).
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=False,
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
-    connect_args={"ssl": _ssl_ctx},
+    connect_args={
+        "ssl": _ssl_ctx,
+        "statement_cache_size": 0,
+    },
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -45,8 +50,12 @@ async def init_db() -> None:
     # Import models so SQLAlchemy registers them before create_all
     from app.models import schema  # noqa: F401
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        print("Database schema successfully verified and initialized.")
+    except Exception as exc:
+        print(f"Warning: database schema initialization encountered error: {exc}")
 
 
 async def close_db() -> None:
